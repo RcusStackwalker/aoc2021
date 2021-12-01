@@ -31,7 +31,7 @@ fn read_file_into_vector(path: &str) -> Vec<usize> {
 }
 
 #[test]
-fn task1_example_data() {
+fn task1_example() {
     let values = read_file_into_vector("src/day1/example.txt");
     let result = number_of_inc(&values);
     println!("D1T1E {}", result);
@@ -47,7 +47,7 @@ fn task1_puzzle() {
 }
 
 #[test]
-fn task2_example_data() {
+fn task2_example() {
     let values = read_file_into_vector("src/day1/example.txt");
     let result = number_of_inc_sliding_window3(&values);
     println!("D1T2E {}", result);
@@ -55,9 +55,23 @@ fn task2_example_data() {
 }
 
 #[test]
-fn task2_puzzle_data() {
+fn task2_puzzle() {
     let values = read_file_into_vector("src/day1/puzzle.txt");
     let result = number_of_inc_sliding_window3(&values);
     println!("D1T2P {}", result);
     assert_eq!(result, 1516);
+}
+
+#[bench]
+fn task1_puzzle_bench(b: &mut test::Bencher) {
+    b.iter(|| {
+        task1_puzzle();
+    });
+}
+
+#[bench]
+fn task2_puzzle_bench(b: &mut test::Bencher) {
+    b.iter(|| {
+        task2_puzzle();
+    });
 }
