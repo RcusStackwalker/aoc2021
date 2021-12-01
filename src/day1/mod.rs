@@ -25,10 +25,14 @@ where
     )
 }
 
+fn read_file_into_vector(path: &str) -> Vec<usize> {
+    let data = fs::read_to_string(path).expect("input data missing");
+    Vec::from_iter(data.lines().map(|l| l.parse().unwrap()))
+}
+
 #[test]
 fn task1_example_data() {
-    let data = fs::read_to_string("src/day1/task1_example_data.txt").expect("input data missing");
-    let values = Vec::from_iter(data.lines().map(|l| l.parse::<usize>().unwrap()));
+    let values = read_file_into_vector("src/day1/example.txt");
     let result = number_of_inc(&values);
     println!("D1T1E {}", result);
     assert_eq!(result, 7);
@@ -36,8 +40,7 @@ fn task1_example_data() {
 
 #[test]
 fn task1_puzzle() {
-    let data = fs::read_to_string("src/day1/task1_puzzle_data.txt").expect("input data missing");
-    let values = Vec::from_iter(data.lines().map(|l| l.parse::<usize>().unwrap()));
+    let values = read_file_into_vector("src/day1/puzzle.txt");
     let result = number_of_inc(&values);
     println!("D1T1P {}", result);
     assert_eq!(result, 1475);
@@ -45,8 +48,7 @@ fn task1_puzzle() {
 
 #[test]
 fn task2_example_data() {
-    let data = fs::read_to_string("src/day1/task1_example_data.txt").expect("input data missing");
-    let values = Vec::from_iter(data.lines().map(|l| l.parse::<usize>().unwrap()));
+    let values = read_file_into_vector("src/day1/example.txt");
     let result = number_of_inc_sliding_window3(&values);
     println!("D1T2E {}", result);
     assert_eq!(result, 5);
@@ -54,8 +56,7 @@ fn task2_example_data() {
 
 #[test]
 fn task2_puzzle_data() {
-    let data = fs::read_to_string("src/day1/task1_puzzle_data.txt").expect("input data missing");
-    let values = Vec::from_iter(data.lines().map(|l| l.parse::<usize>().unwrap()));
+    let values = read_file_into_vector("src/day1/puzzle.txt");
     let result = number_of_inc_sliding_window3(&values);
     println!("D1T2P {}", result);
     assert_eq!(result, 1516);
