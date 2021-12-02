@@ -32,6 +32,22 @@ fn move_sum(v: &Vec<Move>) -> (isize, isize) {
     ret
 }
 
+fn move_sum2(v: &Vec<Move>) -> (isize, isize) {
+    let mut ret = (0, 0);
+    let mut aim = 0;
+    v.iter().for_each(|m| {
+        match m {
+            Move::Forward(x) => {
+                ret.0 += x;
+                ret.1 += x*aim;
+            },
+            Move::Up(x) => aim -= x,
+            Move::Down(x) => aim += x,
+        }
+    });
+    ret
+}
+
 fn answer(v: (isize, isize)) -> isize {
     v.0 * v.1
 }
@@ -40,7 +56,7 @@ fn answer(v: (isize, isize)) -> isize {
 fn task1_example() {
     let values = read_file_into_vector("src/day2/example.txt");
     let result = answer(move_sum(&values));
-    println!("D2T1P {}", result);
+    println!("D2T1E {}", result);
     assert_eq!(result, 150);
 }
 
@@ -56,5 +72,28 @@ fn task1_puzzle() {
 fn task1_puzzle_bench(b: &mut test::Bencher) {
     b.iter(|| {
         task1_puzzle();
+    });
+}
+
+#[test]
+fn task2_example() {
+    let values = read_file_into_vector("src/day2/example.txt");
+    let result = answer(move_sum2(&values));
+    println!("D2T2E {}", result);
+    assert_eq!(result, 900);
+}
+
+#[test]
+fn task2_puzzle() {
+    let values = read_file_into_vector("src/day2/input.txt");
+    let result = answer(move_sum2(&values));
+    println!("D2T2P {}", result);
+    assert_eq!(result, 1739283308);
+}
+
+#[bench]
+fn task2_puzzle_bench(b: &mut test::Bencher) {
+    b.iter(|| {
+        task2_puzzle();
     });
 }
