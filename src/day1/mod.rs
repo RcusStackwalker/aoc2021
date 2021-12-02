@@ -1,5 +1,5 @@
+use crate::utils;
 use itertools::Itertools;
-use std::fs;
 use std::ops::Add;
 
 fn number_of_inc_from_iter<I>(it: I) -> usize
@@ -26,8 +26,7 @@ where
 }
 
 fn read_file_into_vector(path: &str) -> Vec<usize> {
-    let data = fs::read_to_string(path).expect("input data missing");
-    Vec::from_iter(data.lines().map(|l| l.parse().unwrap()))
+    utils::read_file_into_vector(path, |l| l.parse().unwrap())
 }
 
 #[test]

@@ -5,3 +5,4 @@ extern crate test;
 
 mod day1;
 mod day2;
+pub mod utils;
