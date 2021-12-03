@@ -1,31 +1,40 @@
 use crate::utils;
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Copy, Clone)]
 struct Line {
-    bits: Vec<u8>,
+    bits: usize,
+    len: usize,
 }
 
 impl Line {
+    pub fn new(str: &str) -> Line {
+        Line {
+            bits: usize::from_str_radix(str, 2).expect("Malformed string"),
+            len: str.len(),
+        }
+    }
     pub fn bool_at_pos(&self, pos: usize) -> bool {
-        self.bits[pos] == b'1'
+        (self.bits & (1 << (self.len - 1 - pos))) != 0
     }
 
     pub fn value_at_pos(&self, pos: usize) -> usize {
-        if self.bits[pos] == b'1' { 1 } else { 0 }
+        if self.bool_at_pos(pos) {
+            1
+        } else {
+            0
+        }
     }
 
     pub fn len(&self) -> usize {
-        self.bits.len()
+        self.len
     }
 }
 
 fn read_file_into_vector(path: &str) -> Vec<Line> {
-    utils::read_file_into_vector(path, |l| {
-        Line { bits: l.as_bytes().to_owned() }
-    })
+    utils::read_file_into_vector(path, Line::new)
 }
 
-fn gamma_epsilon(v: &Vec<Line>) -> (usize,usize) {
+fn gamma_epsilon(v: &Vec<Line>) -> (usize, usize) {
     let mut ret = 0;
     let l = v[0].len();
     for x in 0..l {
@@ -41,7 +50,7 @@ fn most_common_bit(v: &Vec<Line>, pos: usize) -> bool {
             count += 1;
         }
     });
-    count*2 >= v.len()
+    count * 2 >= v.len()
 }
 
 fn least_common_bit(v: &Vec<Line>, pos: usize) -> bool {
@@ -51,13 +60,14 @@ fn least_common_bit(v: &Vec<Line>, pos: usize) -> bool {
             count += 1;
         }
     });
-    count*2 < v.len()
+    count * 2 < v.len()
 }
 
 fn filter_by_position(v: &Vec<Line>, pos: usize, byte: bool) -> Vec<Line> {
-    v.iter().filter(|l| {
-        l.bool_at_pos(pos) == byte
-    }).map(|x| x.clone()).collect()
+    v.iter()
+        .filter(|l| l.bool_at_pos(pos) == byte)
+        .map(|x| x.clone())
+        .collect()
 }
 
 fn bits_to_decimal(v: &Line) -> usize {
@@ -138,4 +148,3 @@ fn task2_puzzle_bench(b: &mut test::Bencher) {
         task2_puzzle();
     });
 }
-
