@@ -54,19 +54,12 @@ fn most_common_bit(v: &Vec<Line>, pos: usize) -> bool {
 }
 
 fn least_common_bit(v: &Vec<Line>, pos: usize) -> bool {
-    let mut count = 0;
-    v.iter().for_each(|l| {
-        if l.bool_at_pos(pos) {
-            count += 1;
-        }
-    });
-    count * 2 < v.len()
+    !most_common_bit(v, pos)
 }
 
-fn filter_by_position(v: &Vec<Line>, pos: usize, byte: bool) -> Vec<Line> {
-    v.iter()
+fn filter_by_position(v: Vec<Line>, pos: usize, byte: bool) -> Vec<Line> {
+    v.into_iter()
         .filter(|l| l.bool_at_pos(pos) == byte)
-        .map(|x| x.clone())
         .collect()
 }
 
@@ -78,24 +71,24 @@ fn bits_to_decimal(v: &Line) -> usize {
     ret
 }
 
+fn filter_by_criterion<F>(v: Vec<Line>, fun: F) -> usize where
+    F: Fn(&Vec<Line>, usize) -> bool
+{
+    let linelen = v[0].len();
+    let mut values = v;
+    for pos in 0..linelen {
+        let byte = fun(&values, pos);
+        values = filter_by_position(values, pos, byte);
+        if values.len() == 1 {
+            break;
+        }
+    }
+    bits_to_decimal(&values[0])
+}
+
 fn oxygen_co2(v: &Vec<Line>) -> (usize, usize) {
-    let mut values = v.clone();
-    for pos in 0..v[0].len() {
-        let mcb = most_common_bit(&values, pos);
-        values = filter_by_position(&values, pos, mcb);
-        if values.len() == 1 {
-            break;
-        }
-    }
-    let oxygen = bits_to_decimal(&values[0]);
-    values = v.clone();
-    for pos in 0..v[0].len() {
-        values = filter_by_position(&values, pos, least_common_bit(&values, pos));
-        if values.len() == 1 {
-            break;
-        }
-    }
-    let co2 = bits_to_decimal(&values[0]);
+    let oxygen = filter_by_criterion(v.clone(), most_common_bit);
+    let co2 = filter_by_criterion(v.clone(), least_common_bit);
     (oxygen, co2)
 }
 
