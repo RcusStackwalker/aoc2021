@@ -2,7 +2,21 @@ use crate::utils;
 
 #[derive(Debug,Clone)]
 struct Line {
-    bits: Vec<u8>
+    bits: Vec<u8>,
+}
+
+impl Line {
+    pub fn bool_at_pos(&self, pos: usize) -> bool {
+        self.bits[pos] == b'1'
+    }
+
+    pub fn value_at_pos(&self, pos: usize) -> usize {
+        if self.bits[pos] == b'1' { 1 } else { 0 }
+    }
+
+    pub fn len(&self) -> usize {
+        self.bits.len()
+    }
 }
 
 fn read_file_into_vector(path: &str) -> Vec<Line> {
@@ -12,66 +26,60 @@ fn read_file_into_vector(path: &str) -> Vec<Line> {
 }
 
 fn gamma_epsilon(v: &Vec<Line>) -> (usize,usize) {
-    let mut bits = vec![0; v[0].bits.len()];
-    v.iter().for_each(|l| for x in 0..l.bits.len() {
-        bits[x] += if l.bits[x] == b'1' { 1 } else { 0 }
-    });
     let mut ret = 0;
-    for x in 0..bits.len() {
-        ret += (if bits[x] > v.len() / 2 { 1 } else { 0 }) << bits.len() - x - 1;
+    let l = v[0].len();
+    for x in 0..l {
+        ret += (if most_common_bit(v, x) { 1 } else { 0 }) << l - x - 1;
     }
-    (ret, ((1 << bits.len()) - 1) ^ ret)
+    (ret, ((1 << l) - 1) ^ ret)
 }
 
-fn most_common_bit(v: &Vec<Line>, pos: usize) -> u8 {
+fn most_common_bit(v: &Vec<Line>, pos: usize) -> bool {
     let mut count = 0;
     v.iter().for_each(|l| {
-        if l.bits[pos] == b'1' {
+        if l.bool_at_pos(pos) {
             count += 1;
         }
     });
-    if count*2 >= v.len() { b'1' } else { b'0' }
+    count*2 >= v.len()
 }
 
-fn least_common_bit(v: &Vec<Line>, pos: usize) -> u8 {
+fn least_common_bit(v: &Vec<Line>, pos: usize) -> bool {
     let mut count = 0;
     v.iter().for_each(|l| {
-        if l.bits[pos] == b'1' {
+        if l.bool_at_pos(pos) {
             count += 1;
         }
     });
-    if count*2 < v.len() { b'1' } else { b'0' }
+    count*2 < v.len()
 }
 
-fn filter_by_position(v: &Vec<Line>, pos: usize, byte: u8) -> Vec<Line> {
+fn filter_by_position(v: &Vec<Line>, pos: usize, byte: bool) -> Vec<Line> {
     v.iter().filter(|l| {
-        l.bits[pos] == byte
+        l.bool_at_pos(pos) == byte
     }).map(|x| x.clone()).collect()
 }
 
 fn bits_to_decimal(v: &Line) -> usize {
     let mut ret = 0;
-    for x in 0..v.bits.len() {
-        ret += (if v.bits[x] == b'1' { 1 } else { 0 }) << (v.bits.len() - 1 - x);
+    for x in 0..v.len() {
+        ret += v.value_at_pos(x) << (v.len() - 1 - x);
     }
     ret
 }
 
 fn oxygen_co2(v: &Vec<Line>) -> (usize, usize) {
     let mut values = v.clone();
-    eprintln!("{:?}", values);
-    for pos in 0..v[0].bits.len() {
+    for pos in 0..v[0].len() {
         let mcb = most_common_bit(&values, pos);
-        eprintln!("mcb at pos {} {}", pos, mcb);
         values = filter_by_position(&values, pos, mcb);
-        eprintln!("{:?}", values);
         if values.len() == 1 {
             break;
         }
     }
     let oxygen = bits_to_decimal(&values[0]);
     values = v.clone();
-    for pos in 0..v[0].bits.len() {
+    for pos in 0..v[0].len() {
         values = filter_by_position(&values, pos, least_common_bit(&values, pos));
         if values.len() == 1 {
             break;
