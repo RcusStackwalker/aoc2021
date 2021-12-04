@@ -71,8 +71,9 @@ fn bits_to_decimal(v: &Line) -> usize {
     ret
 }
 
-fn filter_by_criterion<F>(v: Vec<Line>, fun: F) -> usize where
-    F: Fn(&Vec<Line>, usize) -> bool
+fn filter_by_criterion<F>(v: Vec<Line>, fun: F) -> usize
+where
+    F: Fn(&Vec<Line>, usize) -> bool,
 {
     let linelen = v[0].len();
     let mut values = v;
