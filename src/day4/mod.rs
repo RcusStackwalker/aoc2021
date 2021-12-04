@@ -67,16 +67,17 @@ impl Board {
 impl Game {
     pub fn new(draws: Draws, boards: Vec<Board>) -> Game {
         let mut index = IndexMap::with_capacity(draws.len());
-        boards.iter().enumerate().for_each(|(board_index, b)| {
-            (0..BOARD_SIZE)
-                .cartesian_product(0..BOARD_SIZE)
-                .for_each(|(y, x)| {
-                    index
-                        .entry(b.rows[y][x].0)
-                        .or_insert(Vec::new())
-                        .push((board_index, x, y));
-                });
-        });
+        boards
+            .iter()
+            .enumerate()
+            .cartesian_product(0..BOARD_SIZE)
+            .cartesian_product(0..BOARD_SIZE)
+            .for_each(|(((board_index, b), y), x)| {
+                index
+                    .entry(b.rows[y][x].0)
+                    .or_insert(Vec::new())
+                    .push((board_index, x, y));
+            });
         Game {
             index,
             draws,
