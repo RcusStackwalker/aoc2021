@@ -84,42 +84,21 @@ impl Game {
         }
     }
     pub fn play(&mut self) -> usize {
-        for d in &self.draws {
-            //eprintln!("Drawing {}", d);
-            match self.index.get(&d) {
-                None => continue,
-                Some(cells) => {
-                    for c in cells {
-                        //eprintln!("Applying to board {} ({}, {})", c.0, c.1, c.2);
-                        if let Some(result) = self.boards[c.0].apply(c.1, c.2) {
-                            return result;
-                        }
-                    }
-                }
-            }
-        }
-        panic!("No winner");
+        self._play(0)
     }
     pub fn play2(&mut self) -> usize {
-        let mut winner = 0;
-        for d in &self.draws {
-            //eprintln!("Drawing {}", d);
-            match self.index.get(&d) {
-                None => continue,
-                Some(cells) => {
-                    for c in cells {
-                        //eprintln!("Applying to board {} ({}, {})", c.0, c.1, c.2);
-                        if let Some(result) = self.boards[c.0].apply(c.1, c.2) {
-                            winner += 1;
-                            if winner == self.boards.len() {
-                                return result;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        panic!("No winner");
+        self._play(self.boards.len() - 1)
+    }
+
+    fn _play(&mut self, skip: usize) -> usize {
+        self.draws
+            .iter()
+            .filter_map(|d| self.index.get(d))
+            .flat_map(|cells| cells.iter())
+            .filter_map(|c| self.boards[c.0].apply(c.1, c.2))
+            .skip(skip)
+            .next()
+            .expect("No winner")
     }
 }
 
