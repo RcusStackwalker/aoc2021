@@ -10,7 +10,7 @@ struct Board {
     row_hits: [usize; BOARD_SIZE],
     column_hits: [usize; BOARD_SIZE],
     rows: [[(usize, bool); BOARD_SIZE]; BOARD_SIZE],
-    won: bool
+    won: bool,
 }
 
 struct Game {
@@ -19,27 +19,19 @@ struct Game {
     boards: Vec<Board>,
 }
 
-impl<'a> Board {
-    pub fn new<I>(mut it: I) -> Board
-    where
-        I: Iterator<Item = &'a str>,
-    {
+impl Board {
+    pub fn new(block: &[&str]) -> Board {
         let mut rows = [[(0, false); BOARD_SIZE]; BOARD_SIZE];
-        let mut y = 0;
-        loop {
-            match it.next() {
-                None => break,
-                Some(s) => s.split_ascii_whitespace().enumerate().for_each(|(x, s)| {
-                    rows[y][x].0 = s.parse::<usize>().unwrap();
-                }),
-            }
-            y += 1;
-        }
+        block.iter().enumerate().for_each(|(y, &l)| {
+            l.split_ascii_whitespace().enumerate().for_each(|(x, s)| {
+                rows[y][x].0 = s.parse::<usize>().unwrap();
+            })
+        });
         Board {
             row_hits: [0; BOARD_SIZE],
             column_hits: [0; BOARD_SIZE],
             rows,
-            won: false
+            won: false,
         }
     }
 
@@ -67,7 +59,9 @@ impl<'a> Board {
         }
     }
 
-    pub fn won(&self) -> bool { self.won }
+    pub fn won(&self) -> bool {
+        self.won
+    }
 }
 
 impl Game {
@@ -131,15 +125,14 @@ impl Game {
 
 fn read_file_into_game(path: &str) -> Game {
     let input = fs::read_to_string(path).expect("Missing input data");
-    let mut it = input.split("\r\n\r\n");
-    let draws_string = it.next().expect("Missing draws");
-    //eprintln!("{:?}", draws_string);
-    let draws = draws_string
+    let lines = input.lines().collect_vec();
+    let mut blocks = lines.split(|&s| s.is_empty()).into_iter();
+    let draws = blocks.next().expect("Missing draws")[0]
         .split(',')
         .map(|s| s.parse::<usize>().unwrap())
         .collect_vec();
-    let boards = it
-        .map(|board_input| Board::new(board_input.lines()))
+    let boards = blocks
+        .map(|board_input| Board::new(board_input))
         .collect_vec();
     Game::new(draws, boards)
 }
