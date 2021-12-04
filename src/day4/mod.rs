@@ -15,7 +15,8 @@ struct Board {
 struct Game {
     index: IndexMap,
     draws: Draws,
-    boards: Vec<Board>
+    boards: Vec<Board>,
+    won: Vec<bool>
 }
 
 impl<'a> Board {
@@ -68,10 +69,12 @@ impl Game {
                 }
             }
         });
+        let won = vec![false; boards.len()];
         Game {
             index,
             draws,
-            boards
+            boards,
+            won
         }
     }
     pub fn play(&mut self) -> usize {
@@ -87,6 +90,28 @@ impl Game {
                 }
             }
 
+        }
+        panic!("No winner");
+    }
+    pub fn play2(&mut self) -> usize {
+        let mut winner = 0;
+        for d in &self.draws {
+            //eprintln!("Drawing {}", d);
+            match self.index.get(&d) {
+                None => continue,
+                Some(cells) => for c in cells {
+                    //eprintln!("Applying to board {} ({}, {})", c.0, c.1, c.2);
+                    if let Some(result) = self.boards[c.0].apply(c.1, c.2) {
+                        if !self.won[c.0] {
+                            self.won[c.0] = true;
+                            winner += 1;
+                            if winner == self.won.len() {
+                                return result;
+                            }
+                        }
+                    }
+                }
+            }
         }
         panic!("No winner");
     }
@@ -124,5 +149,28 @@ fn task1_puzzle() {
 fn task1_puzzle_bench(b: &mut test::Bencher) {
     b.iter(|| {
         task1_puzzle();
+    });
+}
+
+#[test]
+fn task2_example() {
+    let mut game = read_file_into_game("src/day4/example.txt");
+    let result = game.play2();
+    println!("D4T2E {}", result);
+    assert_eq!(result, 1924);
+}
+
+#[test]
+fn task2_puzzle() {
+    let mut game = read_file_into_game("src/day4/input.txt");
+    let result = game.play2();
+    println!("D4T2P {}", result);
+    assert_eq!(result, 22704);
+}
+
+#[bench]
+fn task2_puzzle_bench(b: &mut test::Bencher) {
+    b.iter(|| {
+        task2_puzzle();
     });
 }
