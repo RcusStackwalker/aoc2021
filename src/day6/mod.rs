@@ -1,4 +1,3 @@
-use crate::utils;
 use std::fs;
 
 const MAX_PERIOD: usize = 8;
@@ -36,7 +35,7 @@ fn answer(mut state: SchoolState, days: usize) -> usize {
 
 #[test]
 fn task1_example() {
-    let mut values = read_file_into_state("src/day6/example.txt");
+    let values = read_file_into_state("src/day6/example.txt");
     let result = answer(values, 80);
     println!("D6T1E {}", result);
     assert_eq!(result, 5934);
@@ -44,7 +43,7 @@ fn task1_example() {
 
 #[test]
 fn task1_puzzle() {
-    let mut values = read_file_into_state("src/day6/input.txt");
+    let values = read_file_into_state("src/day6/input.txt");
     let result = answer(values, 80);
     println!("D6T1E {}", result);
     assert_eq!(result, 393019);
@@ -59,7 +58,7 @@ fn task1_puzzle_bench(b: &mut test::Bencher) {
 
 #[test]
 fn task2_example() {
-    let mut values = read_file_into_state("src/day6/example.txt");
+    let values = read_file_into_state("src/day6/example.txt");
     let result = answer(values, 256);
     println!("D6T2E {}", result);
     assert_eq!(result, 26984457539);
@@ -67,7 +66,7 @@ fn task2_example() {
 
 #[test]
 fn task2_puzzle() {
-    let mut values = read_file_into_state("src/day6/input.txt");
+    let values = read_file_into_state("src/day6/input.txt");
     let result = answer(values, 256);
     println!("D6T2E {}", result);
     assert_eq!(result, 1757714216975);
