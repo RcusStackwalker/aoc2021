@@ -27,17 +27,17 @@ fn mutated_state(state: SchoolState) -> SchoolState {
     ret
 }
 
-fn answer(state: SchoolState) -> usize {
+fn answer(mut state: SchoolState, days: usize) -> usize {
+    (0..days).for_each(|_| {
+        state = mutated_state(state);
+    });
     state.iter().sum()
 }
 
 #[test]
 fn task1_example() {
     let mut values = read_file_into_state("src/day6/example.txt");
-    (0..80).for_each(|_| {
-        values = mutated_state(values);
-    });
-    let result = answer(values);
+    let result = answer(values, 80);
     println!("D6T1E {}", result);
     assert_eq!(result, 5934);
 }
@@ -45,10 +45,7 @@ fn task1_example() {
 #[test]
 fn task1_puzzle() {
     let mut values = read_file_into_state("src/day6/input.txt");
-    (0..80).for_each(|_| {
-        values = mutated_state(values);
-    });
-    let result = answer(values);
+    let result = answer(values, 80);
     println!("D6T1E {}", result);
     assert_eq!(result, 393019);
 }
@@ -57,5 +54,28 @@ fn task1_puzzle() {
 fn task1_puzzle_bench(b: &mut test::Bencher) {
     b.iter(|| {
         task1_puzzle();
+    });
+}
+
+#[test]
+fn task2_example() {
+    let mut values = read_file_into_state("src/day6/example.txt");
+    let result = answer(values, 256);
+    println!("D6T2E {}", result);
+    assert_eq!(result, 26984457539);
+}
+
+#[test]
+fn task2_puzzle() {
+    let mut values = read_file_into_state("src/day6/input.txt");
+    let result = answer(values, 256);
+    println!("D6T2E {}", result);
+    assert_eq!(result, 1757714216975);
+}
+
+#[bench]
+fn task2_puzzle_bench(b: &mut test::Bencher) {
+    b.iter(|| {
+        task2_puzzle();
     });
 }
