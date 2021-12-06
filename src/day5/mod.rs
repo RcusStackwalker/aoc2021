@@ -1,5 +1,4 @@
 use crate::utils;
-use itertools::Itertools;
 use std::cmp::Ordering;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -61,13 +60,17 @@ fn analyze(values: Vec<Line>) -> usize {
     result
 }
 
-#[test]
-fn task1_example() {
-    let values = read_file_into_vector("src/day5/example.txt")
+fn read_vertical_horizontal_lines_into_vector(path: &str) -> Vec<Line> {
+    read_file_into_vector(path)
         .iter()
         .filter(|&l| l.p1.x == l.p2.x || l.p1.y == l.p2.y)
         .map(|l| *l)
-        .collect_vec();
+        .collect()
+}
+
+#[test]
+fn task1_example() {
+    let values = read_vertical_horizontal_lines_into_vector("src/day5/example.txt");
     let result = analyze(values);
     println!("D5T1E {}", result);
     assert_eq!(result, 5);
@@ -75,11 +78,7 @@ fn task1_example() {
 
 #[test]
 fn task1_puzzle() {
-    let values = read_file_into_vector("src/day5/input.txt")
-        .iter()
-        .filter(|&l| l.p1.x == l.p2.x || l.p1.y == l.p2.y)
-        .map(|l| *l)
-        .collect_vec();
+    let values = read_vertical_horizontal_lines_into_vector("src/day5/input.txt");
     let result = analyze(values);
     println!("D5T1P {}", result);
     assert_eq!(result, 6841);
