@@ -1,17 +1,17 @@
-use std::cmp::Ordering;
-use itertools::Itertools;
 use crate::utils;
+use itertools::Itertools;
+use std::cmp::Ordering;
 
-#[derive(Debug,Copy,Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 struct Point {
     x: isize,
-    y: isize
+    y: isize,
 }
 
-#[derive(Debug,Copy,Clone)]
+#[derive(Debug, Copy, Clone)]
 struct Line {
     p1: Point,
-    p2: Point
+    p2: Point,
 }
 
 type PointMap = std::collections::HashMap<Point, usize>;
@@ -19,11 +19,12 @@ type PointMap = std::collections::HashMap<Point, usize>;
 fn read_file_into_vector(path: &str) -> Vec<Line> {
     utils::read_file_into_vector(path, |l| {
         let mut points = l.split(" -> ").map(|s| {
-            let mut pair = s.split(',').map(|x| { x.parse::<isize>().unwrap()});
+            let mut pair = s.split(',').map(|x| x.parse::<isize>().unwrap());
             Point {
                 x: pair.next().unwrap(),
                 y: pair.next().unwrap(),
-            }});
+            }
+        });
         Line {
             p1: points.next().unwrap(),
             p2: points.next().unwrap(),
@@ -56,17 +57,17 @@ fn analyze(values: Vec<Line>) -> usize {
         }
         add_point(&mut map, l.p2);
     });
-    let result = map.iter().filter(|(_, &count)| {
-        count > 1
-    }).count();
+    let result = map.iter().filter(|(_, &count)| count > 1).count();
     result
 }
 
 #[test]
 fn task1_example() {
-    let values = read_file_into_vector("src/day5/example.txt").iter().filter(|&l| {
-        l.p1.x == l.p2.x || l.p1.y == l.p2.y
-    }).map(|l| *l).collect_vec();
+    let values = read_file_into_vector("src/day5/example.txt")
+        .iter()
+        .filter(|&l| l.p1.x == l.p2.x || l.p1.y == l.p2.y)
+        .map(|l| *l)
+        .collect_vec();
     let result = analyze(values);
     println!("D5T1E {}", result);
     assert_eq!(result, 5);
@@ -74,9 +75,11 @@ fn task1_example() {
 
 #[test]
 fn task1_puzzle() {
-    let values = read_file_into_vector("src/day5/input.txt").iter().filter(|&l| {
-        l.p1.x == l.p2.x || l.p1.y == l.p2.y
-    }).map(|l| *l).collect_vec();
+    let values = read_file_into_vector("src/day5/input.txt")
+        .iter()
+        .filter(|&l| l.p1.x == l.p2.x || l.p1.y == l.p2.y)
+        .map(|l| *l)
+        .collect_vec();
     let result = analyze(values);
     println!("D5T1P {}", result);
     assert_eq!(result, 6841);

@@ -7,5 +7,6 @@ mod day1;
 mod day2;
 mod day3;
 mod day4;
-pub mod utils;
 mod day5;
+mod day6;
+pub mod utils;
