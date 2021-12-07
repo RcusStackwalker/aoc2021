@@ -13,11 +13,7 @@ fn fuel_needed<F>(values: &Vec<isize>, pos: &isize, burn_fn: &F) -> isize
 where
     F: Fn(isize) -> isize,
 {
-    values
-        .iter()
-        .map(|x| if x < pos { pos - x } else { x - pos })
-        .map(burn_fn)
-        .sum()
+    values.iter().map(|x| (x - pos).abs()).map(burn_fn).sum()
 }
 
 fn least_fuel<F>(values: Vec<isize>, burn_fn: F) -> isize
