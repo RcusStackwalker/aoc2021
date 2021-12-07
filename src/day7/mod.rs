@@ -9,7 +9,7 @@ fn read_file_into_vector(path: &str) -> Vec<isize> {
         .collect()
 }
 
-fn fuel_needed<F>(values: &Vec<isize>, pos: &isize, burn_fn: &F) -> isize
+fn fuel_needed<F>(values: &Vec<isize>, pos: isize, burn_fn: &F) -> isize
 where
     F: Fn(isize) -> isize,
 {
@@ -23,7 +23,7 @@ where
     let minmax = values.iter().minmax();
     match minmax {
         MinMaxResult::MinMax(min, max) => (min.clone()..=max.clone())
-            .map(|x| fuel_needed(&values, &x, &burn_fn))
+            .map(|x| fuel_needed(&values, x, &burn_fn))
             .min()
             .unwrap(),
         _ => 0,
