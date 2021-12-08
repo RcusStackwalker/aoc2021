@@ -2,7 +2,10 @@ use itertools::Itertools;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 
-fn read_file_into_vectors(path: &str) -> Vec<(HashSet<String>, Vec<String>)> {
+type UnorderedValues = HashSet<String>;
+type Line = (UnorderedValues, Vec<String>);
+
+fn read_file_into_vectors(path: &str) -> Vec<Line> {
     let data = fs::read_to_string(path).expect("Input data mising");
     let lines = data.lines();
     lines
@@ -14,7 +17,6 @@ fn read_file_into_vectors(path: &str) -> Vec<(HashSet<String>, Vec<String>)> {
                 .trim()
                 .split(' ')
                 .map(|s| s.chars().sorted().collect::<String>())
-                .sorted_by(|l, r| l.len().cmp(&r.len()))
                 .collect();
             let v1 = it
                 .next()
@@ -32,7 +34,7 @@ fn contains_pattern(s: &str, pat: &str) -> bool {
     pat.chars().all(|c| s.contains(c))
 }
 
-fn map_values(mut values: HashSet<String>) -> Option<Vec<String>> {
+fn map_values(mut values: UnorderedValues) -> Option<Vec<String>> {
     //regardless of contents
     // len=2 - 1,
     // len=3 - 7,
@@ -68,7 +70,7 @@ fn map_values(mut values: HashSet<String>) -> Option<Vec<String>> {
     Some(map)
 }
 
-fn count_digits<P>(line: (HashSet<String>, Vec<String>), predicate: P) -> usize
+fn count_digits<P>(line: Line, predicate: P) -> usize
 where
     P: Fn(&usize) -> bool,
 {
@@ -84,7 +86,7 @@ where
         .count()
 }
 
-fn get_value(line: (HashSet<String>, Vec<String>)) -> usize {
+fn get_value(line: Line) -> usize {
     let map = map_values(line.0).expect("Couldn't resolve mapping");
     let mut hash = HashMap::new();
     map.into_iter().enumerate().for_each(|(i, s)| {
