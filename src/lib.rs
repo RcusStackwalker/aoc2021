@@ -1,5 +1,6 @@
 #![feature(test)]
 #![feature(hash_drain_filter)]
+#![feature(drain_filter)]
 #![allow(dead_code)]
 
 extern crate test;

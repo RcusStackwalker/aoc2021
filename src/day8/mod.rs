@@ -1,8 +1,7 @@
 use crate::utils;
 use itertools::Itertools;
-use std::collections::HashSet;
 
-type UnorderedValues = HashSet<String>;
+type UnorderedValues = Vec<String>;
 type Line = (UnorderedValues, Vec<String>);
 
 fn read_file_into_vectors(path: &str) -> Vec<Line> {
@@ -45,24 +44,24 @@ fn map_values(mut values: UnorderedValues) -> Option<Vec<String>> {
     map[7] = values.drain_filter(|s| s.len() == 3).next()?;
     map[4] = values.drain_filter(|s| s.len() == 4).next()?;
     map[8] = values.drain_filter(|s| s.len() == 7).next()?;
-    let v1 = map[1].clone();
-    map[3] = values
-        .drain_filter(|s| s.len() == 5 && contains_pattern(s, v1.as_str()))
+    let v3 =  values
+        .drain_filter(|s| s.len() == 5 && contains_pattern(s, map[1].as_str()))
         .next()?;
-    let v3 = map[3].clone();
-    map[6] = values
-        .drain_filter(|s| s.len() == 6 && !contains_pattern(s, v1.as_str()))
+    map[3] = v3;
+    let v6 = values
+        .drain_filter(|s| s.len() == 6 && !contains_pattern(s, map[1].as_str()))
         .next()?;
-    let v6 = map[6].clone();
-    map[9] = values
-        .drain_filter(|s| s.len() == 6 && contains_pattern(s, v3.as_str()))
+    map[6] = v6;
+    let v9 = values
+        .drain_filter(|s| s.len() == 6 && contains_pattern(s, map[3].as_str()))
         .next()?;
+    map[9] = v9;
     map[0] = values.drain_filter(|s| s.len() == 6).next()?;
-    map[5] = values
-        .drain_filter(|s| contains_pattern(v6.as_str(), s.as_str()))
+    let v5 = values
+        .drain_filter(|s| contains_pattern(map[6].as_str(), s.as_str()))
         .next()?;
-    map[2] = values.drain().next().unwrap();
-    assert!(values.is_empty());
+    map[5] = v5;
+    map[2] = values.into_iter().next()?;
     Some(map)
 }
 
