@@ -1,33 +1,29 @@
+use crate::utils;
 use itertools::Itertools;
-use std::collections::{HashMap, HashSet};
-use std::fs;
+use std::collections::HashSet;
 
 type UnorderedValues = HashSet<String>;
 type Line = (UnorderedValues, Vec<String>);
 
 fn read_file_into_vectors(path: &str) -> Vec<Line> {
-    let data = fs::read_to_string(path).expect("Input data mising");
-    let lines = data.lines();
-    lines
-        .map(|l| {
-            let mut it = l.split('|');
-            let v0 = it
-                .next()
-                .unwrap()
-                .trim()
-                .split(' ')
-                .map(|s| s.chars().sorted().collect::<String>())
-                .collect();
-            let v1 = it
-                .next()
-                .unwrap()
-                .trim()
-                .split(' ')
-                .map(|s| s.chars().sorted().collect::<String>())
-                .collect();
-            (v0, v1)
-        })
-        .collect()
+    utils::read_file_into_vector(path, |l| {
+        let mut it = l.split('|');
+        let v0 = it
+            .next()
+            .unwrap()
+            .trim()
+            .split(' ')
+            .map(|s| s.chars().sorted().collect::<String>())
+            .collect();
+        let v1 = it
+            .next()
+            .unwrap()
+            .trim()
+            .split(' ')
+            .map(|s| s.chars().sorted().collect::<String>())
+            .collect();
+        (v0, v1)
+    })
 }
 
 fn contains_pattern(s: &str, pat: &str) -> bool {
@@ -75,30 +71,32 @@ where
     P: Fn(&usize) -> bool,
 {
     let map = map_values(line.0).expect("Couldn't resolve mapping");
-    let mut hash = HashMap::new();
-    map.into_iter().enumerate().for_each(|(i, s)| {
-        hash.insert(s, i);
-    });
     line.1
         .iter()
-        .map(|s| hash.get(s.as_str()).expect("Unknown pattern"))
-        .filter(|&x| predicate(x))
+        .map(|s| {
+            map.iter()
+                .position(|item| item == s)
+                .expect("Unknown pattern")
+        })
+        .filter(predicate)
         .count()
 }
 
 fn get_value(line: Line) -> usize {
     let map = map_values(line.0).expect("Couldn't resolve mapping");
-    let mut hash = HashMap::new();
-    map.into_iter().enumerate().for_each(|(i, s)| {
-        hash.insert(s, i);
-    });
     line.1
         .iter()
-        .rev().enumerate()
-        .map(|(i,s)| 10_usize.pow(i as u32) * hash.get(s.as_str()).expect("Unknown pattern"))
+        .rev()
+        .enumerate()
+        .map(|(i, s)| {
+            10_usize.pow(i as u32)
+                * map
+                    .iter()
+                    .position(|item| item == s)
+                    .expect("Unknown pattern")
+        })
         .sum()
 }
-
 
 fn simple_digit(d: &usize) -> bool {
     match d {
@@ -139,10 +137,7 @@ fn task1_puzzle_bench(b: &mut test::Bencher) {
 #[test]
 fn task2_example() {
     let lines = read_file_into_vectors("src/day8/example.txt");
-    let result: usize = lines
-        .into_iter()
-        .map(|l| get_value(l))
-        .sum();
+    let result: usize = lines.into_iter().map(get_value).sum();
     println!("D8T2E {}", result);
     assert_eq!(result, 61229);
 }
@@ -150,10 +145,7 @@ fn task2_example() {
 #[test]
 fn task2_puzzle() {
     let lines = read_file_into_vectors("src/day8/input.txt");
-    let result: usize = lines
-        .into_iter()
-        .map(|l| get_value(l))
-        .sum();
+    let result: usize = lines.into_iter().map(get_value).sum();
     println!("D8T1P {}", result);
     assert_eq!(result, 974512);
 }
