@@ -44,7 +44,7 @@ fn map_values(mut values: UnorderedValues) -> Option<Vec<String>> {
     map[7] = values.drain_filter(|s| s.len() == 3).next()?;
     map[4] = values.drain_filter(|s| s.len() == 4).next()?;
     map[8] = values.drain_filter(|s| s.len() == 7).next()?;
-    let v3 =  values
+    let v3 = values
         .drain_filter(|s| s.len() == 5 && contains_pattern(s, map[1].as_str()))
         .next()?;
     map[3] = v3;
