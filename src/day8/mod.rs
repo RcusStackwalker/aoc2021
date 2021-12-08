@@ -84,6 +84,20 @@ where
         .count()
 }
 
+fn get_value(line: (HashSet<String>, Vec<String>)) -> usize {
+    let map = map_values(line.0).expect("Couldn't resolve mapping");
+    let mut hash = HashMap::new();
+    map.into_iter().enumerate().for_each(|(i, s)| {
+        hash.insert(s, i);
+    });
+    line.1
+        .iter()
+        .rev().enumerate()
+        .map(|(i,s)| 10_usize.pow(i as u32) * hash.get(s.as_str()).expect("Unknown pattern"))
+        .sum()
+}
+
+
 fn simple_digit(d: &usize) -> bool {
     match d {
         1 | 4 | 7 | 8 => true,
@@ -110,12 +124,41 @@ fn task1_puzzle() {
         .map(|l| count_digits(l, simple_digit))
         .sum();
     println!("D8T1P {}", result);
-    //assert_eq!(result, 26);
+    assert_eq!(result, 367);
 }
 
 #[bench]
 fn task1_puzzle_bench(b: &mut test::Bencher) {
     b.iter(|| {
         task1_puzzle();
+    });
+}
+
+#[test]
+fn task2_example() {
+    let lines = read_file_into_vectors("src/day8/example.txt");
+    let result: usize = lines
+        .into_iter()
+        .map(|l| get_value(l))
+        .sum();
+    println!("D8T2E {}", result);
+    assert_eq!(result, 61229);
+}
+
+#[test]
+fn task2_puzzle() {
+    let lines = read_file_into_vectors("src/day8/input.txt");
+    let result: usize = lines
+        .into_iter()
+        .map(|l| get_value(l))
+        .sum();
+    println!("D8T1P {}", result);
+    assert_eq!(result, 974512);
+}
+
+#[bench]
+fn task2_puzzle_bench(b: &mut test::Bencher) {
+    b.iter(|| {
+        task2_puzzle();
     });
 }
