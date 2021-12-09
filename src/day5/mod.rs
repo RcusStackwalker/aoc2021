@@ -1,5 +1,4 @@
 use crate::utils;
-use std::cmp::Ordering;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 struct Point {
@@ -38,16 +37,8 @@ fn add_point(map: &mut PointMap, p: Point) {
 fn analyze(values: Vec<Line>) -> usize {
     let mut map = PointMap::new();
     values.iter().for_each(|l| {
-        let dx = match l.p1.x.cmp(&l.p2.x) {
-            Ordering::Less => 1,
-            Ordering::Greater => -1,
-            Ordering::Equal => 0,
-        };
-        let dy = match l.p1.y.cmp(&l.p2.y) {
-            Ordering::Less => 1,
-            Ordering::Greater => -1,
-            Ordering::Equal => 0,
-        };
+        let dx = (l.p2.x - l.p1.x).signum();
+        let dy = (l.p2.y - l.p1.y).signum();
         let mut p = l.p1;
         while p != l.p2 {
             add_point(&mut map, p);
