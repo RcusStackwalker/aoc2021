@@ -106,13 +106,6 @@ fn completion_score(input: Vec<String>) -> usize {
         .collect_vec();
     results[results.len() / 2]
 }
-#[test]
-fn test_scoring() {
-    assert_eq!(score_illegal_character(')'), 3_usize);
-    assert_eq!(score_illegal_character(']'), 57_usize);
-    assert_eq!(score_illegal_character('}'), 1197_usize);
-    assert_eq!(score_illegal_character('>'), 25137_usize);
-}
 
 #[test]
 fn task1_example() {

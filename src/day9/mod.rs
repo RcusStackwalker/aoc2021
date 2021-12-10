@@ -199,7 +199,7 @@ fn task2_puzzle() {
     let values = read_file_into_grid("src/day9/input.txt");
     let result = top3_basin_sizes(values);
     println!("D9T2P {}", result);
-    assert_eq!(result, 486);
+    assert_eq!(result, 1059300);
 }
 
 #[bench]
