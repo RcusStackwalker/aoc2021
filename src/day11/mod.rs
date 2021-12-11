@@ -107,6 +107,17 @@ fn step(mut grid: Grid, steps: usize) -> usize {
     (0..steps).map(|_| mutate(&mut grid)).sum()
 }
 
+fn step_to_flash_all(mut grid: Grid) -> usize {
+    let mut ret = 0;
+    loop {
+        ret += 1;
+        if mutate(&mut grid) == 100 {
+            break;
+        }
+    }
+    ret
+}
+
 #[test]
 fn task1_example() {
     let grid = read_file_into_grid("src/day11/example.txt");
@@ -120,12 +131,35 @@ fn task1_puzzle() {
     let grid = read_file_into_grid("src/day11/input.txt");
     let result = step(grid, 100);
     println!("D11T1P {}", result);
-    assert_eq!(result, 1656);
+    assert_eq!(result, 1686);
 }
 
 #[bench]
 fn task1_puzzle_bench(b: &mut test::Bencher) {
     b.iter(|| {
         task1_puzzle();
+    });
+}
+
+#[test]
+fn task2_example() {
+    let grid = read_file_into_grid("src/day11/example.txt");
+    let result = step_to_flash_all(grid);
+    println!("D11T2E {}", result);
+    assert_eq!(result, 195);
+}
+
+#[test]
+fn task2_puzzle() {
+    let grid = read_file_into_grid("src/day11/input.txt");
+    let result = step_to_flash_all(grid);
+    println!("D11T2P {}", result);
+    assert_eq!(result, 360);
+}
+
+#[bench]
+fn task2_puzzle_bench(b: &mut test::Bencher) {
+    b.iter(|| {
+        task2_puzzle();
     });
 }
