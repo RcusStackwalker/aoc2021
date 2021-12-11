@@ -63,10 +63,10 @@ fn mutate(grid: &mut Grid) -> usize {
         });
     while flashes.len() > 0 {
         let mut new_flashes = HashSet::new();
-        flashes.iter().for_each(|&(x, y)| {
-            NEIGHBORS
-                .iter()
-                .filter_map(|&(dx, dy)| {
+        flashes
+            .iter()
+            .flat_map(|&(x, y)| {
+                NEIGHBORS.iter().filter_map(move |&(dx, dy)| {
                     if x == 0 && dx < 0
                         || y == 0 && dy < 0
                         || x == GRID_SIZE - 1 && dx > 0
@@ -77,17 +77,17 @@ fn mutate(grid: &mut Grid) -> usize {
                         Some(((x as isize + dx) as usize, (y as isize + dy) as usize))
                     }
                 })
-                .for_each(|(x, y)| {
-                    if let Cell::Energy(e) = grid[y][x] {
-                        grid[y][x] = if e < 9 {
-                            Cell::Energy(e + 1)
-                        } else {
-                            new_flashes.insert((x, y));
-                            Cell::Flash
-                        }
+            })
+            .for_each(|(x, y)| {
+                if let Cell::Energy(e) = grid[y][x] {
+                    grid[y][x] = if e < 9 {
+                        Cell::Energy(e + 1)
+                    } else {
+                        new_flashes.insert((x, y));
+                        Cell::Flash
                     }
-                });
-        });
+                }
+            });
         flashes = new_flashes;
     }
     //last
