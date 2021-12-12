@@ -1,90 +1,93 @@
 use crate::utils;
 use itertools::Itertools;
 use std::collections::HashMap;
-use std::fmt::{Display, Formatter};
 
 #[derive(Clone, Eq, PartialEq, Hash, Debug)]
 enum Point {
     Start,
     End,
-    Small(String),
-    Big(String),
+    Small(usize),
+    Big(usize),
 }
 type Edge = (Point, Point);
 
-fn classify(s: &str) -> Point {
+fn classify(s: &str, map: &mut HashMap<String, usize>) -> Point {
     if s.chars().next().unwrap().is_uppercase() {
-        Point::Big(s.to_owned())
+        let len = map.len();
+        Point::Big(*map.entry(s.to_owned()).or_insert(len))
     } else {
         match s {
             "start" => Point::Start,
             "end" => Point::End,
-            _ => Point::Small(s.to_owned()),
+            _ => {
+                let len = map.len();
+                Point::Small(*map.entry(s.to_owned()).or_insert(len))
+            }
         }
     }
 }
 
 fn read_file_into_vector(path: &str) -> Vec<Edge> {
+    let mut map = HashMap::new();
     utils::read_file_into_vector(path, |l| {
         let p = l.split_once('-').expect("Malformed string");
-        (classify(p.0), classify(p.1))
+        let p1 = classify(p.0, &mut map);
+        let p2 = classify(p.1, &mut map);
+        (p1, p2)
     })
 }
 
 #[derive(Clone)]
-struct Path(Vec<Point>);
+struct Path {
+    points: Vec<Point>,
+    map: HashMap<Point, usize>,
+}
 
-impl Display for Path {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        self.0
-            .iter()
-            .map(|p| match p {
-                Point::Start => "start",
-                Point::End => "end",
-                Point::Big(s) => s.as_str(),
-                Point::Small(s) => s.as_str(),
-            })
-            .join("-")
-            .fmt(f)
+impl Path {
+    fn new() -> Path {
+        let mut ret = Path {
+            points: vec![],
+            map: HashMap::new(),
+        };
+        ret.push(Point::Start);
+        ret
+    }
+
+    fn push(&mut self, p: Point) -> () {
+        *self.map.entry(p.clone()).or_default() += 1;
+        self.points.push(p);
+    }
+
+    fn count(&self, p: &Point) -> usize {
+        self.map.get(p).unwrap_or(&0_usize).clone()
+    }
+
+    fn last(&self) -> Option<&Point> {
+        self.points.last()
     }
 }
 
 fn small_once(path: &Path, point: &Point) -> bool {
-    !path.0.contains(point)
+    path.count(point) == 0
 }
 
 fn small_twice(path: &Path, point: &Point) -> bool {
-    let c = !path.0.contains(point);
-    if c {
-        //eprintln!("accepting {:?} for {}, !contains", point, path);
+    if path.count(point) == 0 {
         return true;
     }
-    let nodoubles = path
-        .0
-        .iter()
-        .filter(|&x| match x {
-            Point::Small(_) => true,
-            _ => false,
-        })
-        .all(|x| path.0.iter().filter(|&p| p == x).count() < 2);
-    if nodoubles {
-        //eprintln!("accepting {:?} for {}, !nodoubles", point, path);
-    }
-    nodoubles
+    path.map.iter().all(|(point, count)| match point {
+        Point::Small(_) => *count < 2,
+        _ => true,
+    })
 }
 
 fn build_path<F>(edges: &HashMap<Point, Vec<Point>>, path: &Path, small_rule: &F) -> Vec<Path>
 where
     F: Fn(&Path, &Point) -> bool,
 {
-    if let Point::End = path.0.last().unwrap() {
-        return vec![path.clone()];
-    }
-    if path.0.len() > 100 {
-        return vec![];
-    }
+    assert_ne!(path.last(), Some(&Point::End));
     edges
-        .get(path.0.last().unwrap())
+        .get(path.last().unwrap())
         .unwrap()
         .iter()
         .filter_map(|dst| match dst {
@@ -100,8 +103,7 @@ where
         })
         .map(|p| {
             let mut path = path.clone();
-            //eprintln!("Growing {} by {:?}", path, p);
-            path.0.push(p);
+            path.push(p);
             path
         })
         .collect()
@@ -116,7 +118,7 @@ where
         edges.entry(p1.clone()).or_insert(vec![]).push(p2.clone());
         edges.entry(p2.clone()).or_insert(vec![]).push(p1.clone());
     });
-    let mut paths = vec![Path(vec![Point::Start])];
+    let mut paths = vec![Path::new()];
     let mut finished_paths = vec![];
     loop {
         let mut new_paths = paths
@@ -125,18 +127,13 @@ where
             .collect_vec();
 
         new_paths
-            .drain_filter(|p| p.0.last().unwrap() == &Point::End)
+            .drain_filter(|p| p.last().unwrap() == &Point::End)
             .for_each(|p| finished_paths.push(p));
         if new_paths.len() == 0 {
             break;
         }
         paths = new_paths;
     }
-    // finished_paths
-    //     .iter()
-    //     .filter(|&p| p.0.last().unwrap() == &Point::End)
-    //     .sorted_by_key(|&x| x.0.len())
-    //     .for_each(|x| eprintln!("{}", x));
     finished_paths.len()
 }
 
