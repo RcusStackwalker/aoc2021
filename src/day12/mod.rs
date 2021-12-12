@@ -39,42 +39,47 @@ fn read_file_into_vector(path: &str) -> Vec<Edge> {
     })
 }
 
-#[derive(Clone)]
+#[derive(Copy, Clone)]
 struct Path {
-    //points: Vec<Point>,
     last: Point,
-    map: HashMap<Point, usize>,
-    max_small_count: usize,
+    small_map: u32,
+    second_slot_available: bool,
 }
 
 impl Path {
     fn new() -> Path {
-        let mut ret = Path {
-            //points: Vec::with_capacity(16),
+        Path {
             last: Point::Start,
-            map: HashMap::with_capacity(16),
-            max_small_count: 0,
-        };
-        //ret.push(Point::Start);
-        ret
-    }
-
-    fn push(&mut self, p: Point) -> () {
-        let entry = self.map.entry(p.clone()).or_default();
-        *entry += 1;
-        if let Point::Small(_) = p {
-            self.max_small_count = self.max_small_count.max(*entry);
+            small_map: 0,
+            second_slot_available: true,
         }
-        //self.points.push(p);
-        self.last = p;
     }
 
-    fn count(&self, p: Point) -> usize {
-        self.map.get(&p).unwrap_or(&0_usize).clone()
+    fn push(&self, p: Point) -> Path {
+        let (small_map, second_slot_available) = if let Point::Small(index) = p {
+            let mask = 1 << index;
+            let second_slot_available = if self.small_map & mask != 0 {
+                assert_eq!(self.second_slot_available, true);
+                false
+            } else {
+                self.second_slot_available
+            };
+            (self.small_map | mask, second_slot_available)
+        } else {
+            (self.small_map, self.second_slot_available)
+        };
+        Path {
+            last: p,
+            small_map,
+            second_slot_available,
+        }
+    }
+
+    fn contains_small(&self, p: NodeIndex) -> bool {
+        (self.small_map & (1 << p)) != 0
     }
 
     fn last(&self) -> Point {
-        //self.points.last().unwrap()
         self.last
     }
 
@@ -83,22 +88,12 @@ impl Path {
     }
 }
 
-fn small_once(path: &Path, point: Point) -> bool {
-    path.count(point) == 0
+fn small_once(path: &Path, point: NodeIndex) -> bool {
+    !path.contains_small(point)
 }
 
-fn small_twice(path: &Path, point: Point) -> bool {
-    if path.count(point) == 0 {
-        return true;
-    }
-    path.max_small_count < 2
-    /*
-    path.map.iter().all(|(point, count)| match point {
-        Point::Small(_) => *count < 2,
-        _ => true,
-    })
-
-     */
+fn small_twice(path: &Path, point: NodeIndex) -> bool {
+    !path.contains_small(point) || path.second_slot_available
 }
 
 fn build_path<'a, F>(
@@ -107,7 +102,7 @@ fn build_path<'a, F>(
     small_rule: &'a F,
 ) -> impl Iterator<Item = Path> + 'a
 where
-    F: Fn(&Path, Point) -> bool,
+    F: Fn(&Path, NodeIndex) -> bool,
 {
     edges
         .get(&path.last())
@@ -116,24 +111,20 @@ where
         .filter_map(|&dst| match &dst {
             Point::Start => None,
             Point::End | Point::Big(_) => Some(dst),
-            Point::Small(_) => {
-                if small_rule(path, dst) {
+            Point::Small(index) => {
+                if small_rule(path, *index) {
                     Some(dst)
                 } else {
                     None
                 }
             }
         })
-        .map(|p| {
-            let mut path = path.clone();
-            path.push(p);
-            path
-        })
+        .map(|p| path.push(p))
 }
 
 fn path_count<F>(v: Vec<Edge>, small_rule: F) -> usize
 where
-    F: Fn(&Path, Point) -> bool,
+    F: Fn(&Path, NodeIndex) -> bool,
 {
     let mut edges = HashMap::new();
     v.into_iter().for_each(|(p1, p2)| {
@@ -146,17 +137,12 @@ where
     });
     let mut paths = vec![Path::new()];
     let mut finished_paths = 0;
-    let mut max_len = 0;
     while paths.len() != 0 {
         paths = paths
             .iter()
             .flat_map(|path| build_path(&edges, path, &small_rule))
             .filter(|path| {
                 if path.finished() {
-                    // if max_len < path.points.len() {
-                    //     max_len = path.points.len();
-                    //     eprintln!("{:?}", path.points);
-                    // }
                     finished_paths += 1;
                     false
                 } else {
