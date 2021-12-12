@@ -62,8 +62,12 @@ impl Path {
         self.map.get(p).unwrap_or(&0_usize).clone()
     }
 
-    fn last(&self) -> Option<&Point> {
-        self.points.last()
+    fn last(&self) -> &Point {
+        self.points.last().unwrap()
+    }
+
+    fn finished(&self) -> bool {
+        self.last() == &Point::End
     }
 }
 
@@ -81,13 +85,16 @@ fn small_twice(path: &Path, point: &Point) -> bool {
     })
 }
 
-fn build_path<F>(edges: &HashMap<Point, Vec<Point>>, path: &Path, small_rule: &F) -> Vec<Path>
+fn build_path<'a, F>(
+    edges: &'a HashMap<Point, Vec<Point>>,
+    path: &'a Path,
+    small_rule: &'a F,
+) -> impl Iterator<Item = Path> + 'a
 where
     F: Fn(&Path, &Point) -> bool,
 {
-    assert_ne!(path.last(), Some(&Point::End));
     edges
-        .get(path.last().unwrap())
+        .get(path.last())
         .unwrap()
         .iter()
         .filter_map(|dst| match dst {
@@ -106,7 +113,6 @@ where
             path.push(p);
             path
         })
-        .collect()
 }
 
 fn path_count<F>(v: Vec<Edge>, small_rule: F) -> usize
@@ -115,26 +121,31 @@ where
 {
     let mut edges = HashMap::new();
     v.into_iter().for_each(|(p1, p2)| {
-        edges.entry(p1.clone()).or_insert(vec![]).push(p2.clone());
-        edges.entry(p2.clone()).or_insert(vec![]).push(p1.clone());
+        if p1 != Point::End && p2 != Point::Start {
+            edges.entry(p1.clone()).or_insert(vec![]).push(p2.clone());
+        }
+        if p2 != Point::End && p1 != Point::Start {
+            edges.entry(p2.clone()).or_insert(vec![]).push(p1.clone());
+        }
     });
     let mut paths = vec![Path::new()];
-    let mut finished_paths = vec![];
-    loop {
-        let mut new_paths = paths
+    let mut finished_paths = 0;
+    while paths.len() != 0 {
+        let new_paths = paths
             .iter()
-            .flat_map(|path| build_path(&edges, path, &small_rule).into_iter())
+            .flat_map(|path| build_path(&edges, path, &small_rule))
+            .filter(|path| {
+                if path.finished() {
+                    finished_paths += 1;
+                    false
+                } else {
+                    true
+                }
+            })
             .collect_vec();
-
-        new_paths
-            .drain_filter(|p| p.last().unwrap() == &Point::End)
-            .for_each(|p| finished_paths.push(p));
-        if new_paths.len() == 0 {
-            break;
-        }
         paths = new_paths;
     }
-    finished_paths.len()
+    finished_paths
 }
 
 #[test]
