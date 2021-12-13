@@ -69,6 +69,37 @@ fn result_once(grid: Grid, instructions: Instructions) -> usize {
     step_once(grid, instructions[0]).len()
 }
 
+fn step_all(mut grid: Grid, instructions: Instructions) -> Grid {
+    for i in instructions {
+        grid = step_once(grid, i)
+    }
+    grid
+}
+
+fn print_grid(grid: Grid) -> () {
+    let maxx = grid.iter().map(|p| p.0).max().unwrap();
+    let maxy = grid.iter().map(|p| p.1).max().unwrap();
+
+    let vec = (0..=maxy)
+        .map(|y| {
+            let mut line = vec![];
+            line.resize(maxx + 1, false);
+            grid.iter().for_each(|&(px, py)| {
+                if y == py {
+                    line[px] = true;
+                }
+            });
+            line
+        })
+        .collect_vec();
+
+    vec.iter().for_each(|line| {
+        line.iter()
+            .for_each(|c| if *c { eprint!("#") } else { eprint!(".") });
+        eprintln!();
+    });
+}
+
 #[test]
 fn task1_example() {
     let (values, instructions) = read_file("src/day13/example.txt");
@@ -89,5 +120,28 @@ fn task1_puzzle() {
 fn task1_puzzle_bench(b: &mut test::Bencher) {
     b.iter(|| {
         task1_puzzle();
+    });
+}
+
+#[test]
+fn task2_example() {
+    let (values, instructions) = read_file("src/day13/example.txt");
+    let result = step_all(values, instructions);
+    print_grid(result);
+    //println!("D13T1E {}", result);
+    //assert_eq!(result, 17);
+}
+
+#[test]
+fn task2_puzzle() {
+    let (values, instructions) = read_file("src/day13/input.txt");
+    let result = step_all(values, instructions);
+    print_grid(result); //result is UCLZRAZU
+}
+
+#[bench]
+fn task2_puzzle_bench(b: &mut test::Bencher) {
+    b.iter(|| {
+        task2_puzzle();
     });
 }
