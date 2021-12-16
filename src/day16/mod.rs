@@ -1,10 +1,19 @@
 use itertools::Itertools;
 use std::io;
 
+#[derive(Debug)]
 enum PacketBody {
     LiteralValue(usize),
-    Operator(u8, Vec<Packet>),
+    Sum(Vec<Packet>),
+    Product(Vec<Packet>),
+    Min(Vec<Packet>),
+    Max(Vec<Packet>),
+    Gt(Vec<Packet>),
+    Lt(Vec<Packet>),
+    Eq(Vec<Packet>),
 }
+
+#[derive(Debug)]
 struct Packet {
     version: u8,
     body: PacketBody,
@@ -69,25 +78,16 @@ trait DecoderTrait {
 
         // ELSE: multiple bytes...
         result &= 0xf;
-        let mut shift: u32 = 4;
         loop {
             // 1. Read the next chunk
             let b: usize = self.read_bits(5)?.into();
-            // 2. Multiply the value of the unsigned number represented by
-            // the 4 least significant
-            // bits of the octet by the current multiplier and add the
-            // result to the current value.
-            result += match (b & 0xf).checked_shl(shift) {
-                Some(v) => v,
-                None => {
-                    return Err(io::Error::new(
-                        io::ErrorKind::Other,
-                        "UnsignedInteger size too large to be stored in usize",
-                    ))
-                }
-            };
-            // 3. Multiply the multiplier by 128
-            shift += 4;
+            result = result.checked_shl(4).ok_or_else(|| {
+                io::Error::new(
+                    io::ErrorKind::Other,
+                    "UnsignedInteger size too large to be stored in usize",
+                )
+            })?;
+            result += b & 0x0f;
             // 4. If the most significant bit of the octet was 1, go back to
             // step 1
             if b < 16 {
@@ -195,16 +195,9 @@ fn parse_packet<T: DecoderTrait>(decoder: &mut T) -> Packet {
         }
     } else {
         let i = decoder.read_bit().unwrap();
-        if i != 0 {
+        let packets = if i != 0 {
             let packets_number = decoder.read_bits(11).unwrap();
-            assert_ne!(packets_number, 1718);
-            Packet {
-                version,
-                body: PacketBody::Operator(
-                    t,
-                    (0..packets_number).map(|_| parse_packet(decoder)).collect(),
-                ),
-            }
+            (0..packets_number).map(|_| parse_packet(decoder)).collect()
         } else {
             let bits_number = decoder.read_bits(15).unwrap() as u32;
             let mut subdecoder = SubDecoder::new(decoder, bits_number);
@@ -212,10 +205,20 @@ fn parse_packet<T: DecoderTrait>(decoder: &mut T) -> Packet {
             while subdecoder.bits > 0 {
                 v.push(parse_packet(&mut subdecoder));
             }
-            Packet {
-                version,
-                body: PacketBody::Operator(t, v),
-            }
+            v
+        };
+        Packet {
+            version,
+            body: match t {
+                0 => PacketBody::Sum(packets),
+                1 => PacketBody::Product(packets),
+                2 => PacketBody::Min(packets),
+                3 => PacketBody::Max(packets),
+                5 => PacketBody::Gt(packets),
+                6 => PacketBody::Lt(packets),
+                7 => PacketBody::Eq(packets),
+                _ => panic!("Wrong packet type"),
+            },
         }
     }
 }
@@ -232,9 +235,49 @@ fn parse_str(s: &str) -> Packet {
 fn add_versions(p: &Packet) -> usize {
     p.version as usize
         + match &p.body {
-            PacketBody::Operator(_, v) => v.iter().map(add_versions).sum(),
+            PacketBody::Sum(v)
+            | PacketBody::Product(v)
+            | PacketBody::Min(v)
+            | PacketBody::Max(v)
+            | PacketBody::Gt(v)
+            | PacketBody::Lt(v)
+            | PacketBody::Eq(v) => v.iter().map(add_versions).sum(),
             _ => 0,
         }
+}
+
+fn calculate(p: &Packet) -> usize {
+    match &p.body {
+        PacketBody::LiteralValue(v) => *v,
+        PacketBody::Sum(v) => v.iter().map(calculate).sum(),
+        PacketBody::Product(v) => v.iter().map(calculate).product(),
+        PacketBody::Min(v) => v.iter().map(calculate).min().unwrap(),
+        PacketBody::Max(v) => v.iter().map(calculate).max().unwrap(),
+        PacketBody::Gt(v) => {
+            assert_eq!(v.len(), 2);
+            if calculate(&v[0]) > calculate(&v[1]) {
+                1
+            } else {
+                0
+            }
+        }
+        PacketBody::Lt(v) => {
+            assert_eq!(v.len(), 2);
+            if calculate(&v[0]) < calculate(&v[1]) {
+                1
+            } else {
+                0
+            }
+        }
+        PacketBody::Eq(v) => {
+            assert_eq!(v.len(), 2);
+            if calculate(&v[0]) == calculate(&v[1]) {
+                1
+            } else {
+                0
+            }
+        }
+    }
 }
 
 fn parse_file(path: &str) -> Packet {
@@ -268,5 +311,50 @@ fn task1_puzzle() {
 fn task1_puzzle_bench(b: &mut test::Bencher) {
     b.iter(|| {
         task1_puzzle();
+    });
+}
+
+#[test]
+fn task2_example() {
+    let result = calculate(&parse_str("D2FE28"));
+    println!("D16T2E0 {}", result);
+    assert_eq!(result, 2021);
+    let result = calculate(&parse_str("C200B40A82"));
+    println!("D16T2E1 {}", result);
+    assert_eq!(result, 3);
+    let result = calculate(&parse_str("04005AC33890"));
+    println!("D16T2E2 {}", result);
+    assert_eq!(result, 54);
+    let result = calculate(&parse_str("880086C3E88112"));
+    println!("D16T2E3 {}", result);
+    assert_eq!(result, 7);
+    let result = calculate(&parse_str("CE00C43D881120"));
+    println!("D16T2E4 {}", result);
+    assert_eq!(result, 9);
+    let result = calculate(&parse_str("D8005AC2A8F0"));
+    println!("D16T2E5 {}", result);
+    assert_eq!(result, 1);
+    let result = calculate(&parse_str("F600BC2D8F"));
+    println!("D16T2E6 {}", result);
+    assert_eq!(result, 0);
+    let result = calculate(&parse_str("9C005AC2F8F0"));
+    println!("D16T2E7 {}", result);
+    assert_eq!(result, 0);
+    let result = calculate(&parse_str("9C0141080250320F1802104A08"));
+    println!("D16T2E8 {}", result);
+    assert_eq!(result, 1);
+}
+
+#[test]
+fn task2_puzzle() {
+    let result = calculate(&parse_file("src/day16/input.txt"));
+    println!("D16T2P {}", result);
+    assert_eq!(result, 2056021084691);
+}
+
+#[bench]
+fn task2_puzzle_bench(b: &mut test::Bencher) {
+    b.iter(|| {
+        task2_puzzle();
     });
 }
