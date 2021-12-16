@@ -2,27 +2,19 @@ use crate::utils;
 use itertools::Itertools;
 use priority_queue::PriorityQueue;
 
-#[derive(Copy, Clone)]
-struct Point {
-    cost: u8,
-}
-
-impl Point {
-    fn new(cost: u8) -> Point {
-        Point { cost }
-    }
-}
+type Cost = u8;
 
 struct Grid {
-    points: Vec<Vec<Point>>,
+    points: Vec<Vec<Cost>>,
     width: i16,
     height: i16,
 }
 
 impl Grid {
-    fn point_unsafe(&self, x: i16, y: i16) -> &Point {
+    fn point_unsafe(&self, x: i16, y: i16) -> Cost {
         unsafe {
-            self.points
+            *self
+                .points
                 .get_unchecked(y as usize)
                 .get_unchecked(x as usize)
         }
@@ -74,7 +66,7 @@ impl<'a> Iterator for NeighborCoordinatesIterator<'a> {
 fn read_file(path: &str) -> Grid {
     let points = utils::read_file_into_vector(path, |l| {
         l.chars()
-            .map(|x| Point::new(x.to_digit(10).unwrap() as u8))
+            .map(|x| x.to_digit(10).unwrap() as Cost)
             .collect_vec()
     });
     let width = points.get(0).unwrap().len() as i16;
@@ -110,26 +102,26 @@ impl VisitedGrid {
 }
 
 fn find_path(grid: Grid) -> usize {
-    let mut frontier = UnvisitedQueue::new();
+    let mut frontier = UnvisitedQueue::with_capacity(grid.width as usize * 2);
+    let dst = (grid.width - 1, grid.height - 1);
     frontier.push((0, 0), Reverse(0));
     let mut visited = VisitedGrid::new(grid.width as usize, grid.height as usize);
-    while !frontier.is_empty() {
-        let (p, dist) = frontier.pop().unwrap();
-        if p.0 == grid.width - 1 && p.1 == grid.height - 1 {
+    while let Some((p, dist)) = frontier.pop() {
+        if p == dst {
             return dist.0;
         }
         visited.set_visited(p.0, p.1);
-        grid.neighbor_coordinates(p.0, p.1)
-            .filter(|(x, y)| !visited.is_visited(*x, *y))
-            .for_each(|(x, y)| {
-                let alt = grid.point_unsafe(x, y).cost as usize + dist.0;
+        grid.neighbor_coordinates(p.0, p.1).for_each(|(x, y)| {
+            if !visited.is_visited(x, y) {
+                let alt = grid.point_unsafe(x, y) as usize + dist.0;
                 frontier.push_increase((x, y), Reverse(alt));
-            });
+            }
+        });
     }
     panic!("Path not found");
 }
 
-fn wrap(cost: u8) -> u8 {
+fn wrap(cost: Cost) -> Cost {
     ((cost - 1) % 9) + 1
 }
 
@@ -142,21 +134,13 @@ fn expand(grid: Grid) -> Grid {
         .map(|l| {
             (0..5)
                 .cartesian_product(l.into_iter())
-                .map(|(it, point)| Point {
-                    cost: wrap(point.cost + it),
-                })
+                .map(|(it, cost)| wrap(cost + it))
                 .collect_vec()
         })
         .collect_vec();
     let points = (0..5)
         .cartesian_product(expanded_right.into_iter())
-        .map(|(it, line)| {
-            line.into_iter()
-                .map(|p| Point {
-                    cost: wrap(p.cost + it),
-                })
-                .collect_vec()
-        })
+        .map(|(it, line)| line.into_iter().map(|p| wrap(p + it)).collect_vec())
         .collect_vec();
     Grid {
         points,
@@ -192,10 +176,6 @@ fn task1_puzzle_bench(b: &mut test::Bencher) {
 fn task2_example() {
     let grid = read_file("src/day15/example.txt");
     let grid = expand(grid);
-    grid.points.iter().for_each(|l| {
-        l.iter().for_each(|x| eprint!("{}", x.cost));
-        eprintln!();
-    });
     let result = find_path(grid);
     println!("D15T2E {}", result);
     assert_eq!(result, 315);
