@@ -201,9 +201,9 @@ fn parse_packet<T: DecoderTrait>(decoder: &mut T) -> Packet {
         } else {
             let bits_number = decoder.read_bits(15).unwrap() as u32;
             let mut subdecoder = SubDecoder::new(decoder, bits_number);
-            let mut v = Vec::new();
+            let mut v = vec![];
             while subdecoder.bits > 0 {
-                v.push(parse_packet(&mut subdecoder));
+                v.push(parse_packet(&mut subdecoder))
             }
             v
         };
