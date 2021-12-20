@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use std::fmt::{Debug, Formatter};
 
 #[derive(PartialEq, Eq, Clone)]
@@ -201,6 +202,12 @@ fn parse_str(s: &str) -> List {
     }
 }
 
+fn vec_sum(v: Vec<List>) -> List {
+    let mut it = v.into_iter();
+    let init = it.next().unwrap();
+    it.fold(init, add)
+}
+
 #[test]
 fn explode_test() {
     let mut n = parse_str("[[[[[9,8],1],2],3],4]");
@@ -317,9 +324,7 @@ fn magnitude_test() {
 #[test]
 fn task1_example() {
     let v = super::utils::read_file_into_vector("src/day18/example.txt", parse_str);
-    let mut it = v.into_iter();
-    let init = it.next().unwrap();
-    let result = it.fold(init, add);
+    let result = vec_sum(v);
     assert_eq!(
         result,
         parse_str("[[[[6,6],[7,6]],[[7,7],[7,0]]],[[[7,7],[7,7]],[[7,8],[9,9]]]]")
@@ -334,4 +339,42 @@ fn task1_puzzle() {
     let init = it.next().unwrap();
     let result = it.fold(init, add);
     assert_eq!(magnitude(&result), 3665);
+}
+
+#[bench]
+fn task1_puzzle_bench(b: &mut test::Bencher) {
+    b.iter(|| {
+        task1_puzzle();
+    });
+}
+
+#[test]
+fn task2_example() {
+    let v = super::utils::read_file_into_vector("src/day18/example.txt", parse_str);
+    let result = v
+        .into_iter()
+        .permutations(2)
+        .map(|v| magnitude(&vec_sum(v)))
+        .max()
+        .unwrap();
+    assert_eq!(result, 3993);
+}
+
+#[test]
+fn task2_puzzle() {
+    let v = super::utils::read_file_into_vector("src/day18/input.txt", parse_str);
+    let result = v
+        .into_iter()
+        .permutations(2)
+        .map(|v| magnitude(&vec_sum(v)))
+        .max()
+        .unwrap();
+    assert_eq!(result, 4775);
+}
+
+#[bench]
+fn task2_puzzle_bench(b: &mut test::Bencher) {
+    b.iter(|| {
+        task2_puzzle();
+    });
 }
